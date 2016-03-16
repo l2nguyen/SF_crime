@@ -18,18 +18,35 @@ head(crime, n=10)
 crime$Dates <- strptime(crime$Dates, format="%Y-%m-%d %H:%M:%S")
 class(crime$Dates)  # Check it worked
 
-# Split date into separate variables
-crime$day <- crime$Dates$mday  # Date
-crime$month <- crime$Dates$mon + 1  # Month
-crime$hour <- crime$Dates$hour  # Hour of the day
+# Add new variables about year/month/day of date and hour
+crime <-
+  crime %>%
+  mutate(Year  = (crime$Dates$year + 1900),
+         Month = (crime$Dates$mon + 1),
+         dayDate = crime$Dates$mday,
+         Hour  = crime$Dates$hour,
+         DayOfWeek = factor(DayOfWeek, levels=c("Monday",
+                                                "Tuesday",
+                                                "Wednesday",
+                                                "Thursday",
+                                                "Friday",
+                                                "Saturday",
+                                                "Sunday"))
+  )
 
-head(crime)  # Check it worked
+str(crime)  # Check it worked
+
+# Look at the type of crimes in the dataset
+unique(crime$Category)
 
 ###--- DATA VISUALIZATION ---###
 
+# Hours where the most crime occurs
+ggplot(data=mapdata, aes(x=Hour)) +
+  geom_bar(colour="black", fill="skyblue") +
+  ylab('Count')
+
 # Which neighborhood has the most crime?
-
-
 plot1<- ggplot(data=crime,
                aes(x=reorder(PdDistrict, -table(PdDistrict)[PdDistrict]))) +
         geom_bar(stat="count", width=0.5, fill="steelblue") +
