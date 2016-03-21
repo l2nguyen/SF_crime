@@ -77,44 +77,68 @@ make.pie(theft)  # Theft
 
 ###--- DATA WRANGLING/VISUALIZATION ---###
 
-# Which neighborhood has the most crime?
-plot1<- ggplot(data=crime,
+# Which neighborhood has the most violent crimes?
+plot1<- ggplot(data=violent,
         aes(x=reorder(PdDistrict, -table(PdDistrict)[PdDistrict]))) +
         geom_bar(stat="count", width=0.5, fill="steelblue") +
         scale_size_area() +
         xlab("District") +
         ylab("Count") +
         theme(axis.text.x = element_text(angle = 45, vjust=1, hjust = 1))
+plot1
 
-# HOURS where the most crime occurs
-plot2<- ggplot(data=crime, aes(x=Hour)) +
+# DAYS OF THE WEEK where the most crime occurs
+plot2<- ggplot(data=violent, aes(x=DayOfWeek)) +
+  geom_bar(colour="black", fill="royalblue") +
+  xlab("Day of the Week") +
+  ylab('Count')
+plot2
+# Crime seems to be happening every day
+# Mildly higher on weekends
+
+# HOURS where the most violent crime occurs
+plot3<- ggplot(data=violent, aes(x=Hour)) +
         geom_bar(colour="black", fill="royalblue") +
         xlab("Hour of Day") +
         ylab('Count')
+plot3
 # Less crime occur around 1-6 AM for all crimes
 
 # Look at specific type of crimes
 # Then we can see if there are any differences in the time of occurence
 # for different crimes
 
-# Chart of violent crime occurences
-ggplot(data=violent, aes(x=Hour)) +
-  geom_bar(colour="black", fill="skyblue") +
-  ylab('Count') +
-  facet_wrap(~Category, scales='free')
-
-# DAYS OF THE WEEK where the most crime occurs
-plot3<- ggplot(data=crime, aes(x=DayOfWeek)) +
-        geom_bar(colour="black", fill="royalblue") +
-        xlab("Day of the Week") +
-        ylab('Count')
-# Crime seems to be happening every day
+# Same as above but disaggregated by type of violent crime
+plot4<- ggplot(data=violent, aes(x=Hour)) +
+        geom_bar(colour="black", fill="skyblue") +
+        ylab('Count') +
+        facet_wrap(~Category, scales='free')
+plot4
+# Slow increase in robbery as it gets later in the night
+# Sexual assault occurs much more often around midnight
 
 # How often are crimes solved?
 unique(crime$Resolution)
 crime %>% count(Resolution, sort=TRUE)
 # Looks like most cases do not have a resolution
 # Note: What is a psychopathic case?
+
+crime %>%
+  filter(Category=="SEX OFFENSES FORCIBLE") %>%
+  count(Resolution, sort=TRUE)
+
+plot4<- ggplot(data=violent, aes(x=Resolution)) +
+  geom_bar(colour="black", fill="skyblue") +
+  ylab('Count') +
+  facet_wrap(~Category, scales='free')
+plot4
+
+# Look at most common resolution of violent crimes
+outcome<- prop.table(table(violent$Resolution, violent$Category),2)
+# Margin = 2 gives you the total of the columns
+# margin = 1 gives you the total of the rows
+outcome<- round(resolve*100, digits=2)
+# No arrests are made for the majority of cases
 
 ###--- MAPPING OF SF ---###
 
