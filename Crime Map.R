@@ -4,6 +4,8 @@ library(dplyr)
 library(ggmap)
 library(ggplot2)
 library(readr)
+library(leaflet)
+library(RColorBrewer)
 
 setwd("/Users/Zelda/Data Science/SF_crime")
 
@@ -13,11 +15,6 @@ crime <- read.csv("train.csv", header=TRUE)
 # Quick look at the data
 str(crime)
 head(crime, n=10)
-
-counts<- crime %>% count(Category, sort=TRUE)
-# Make data frame with only top 10 crimes
-top10 <- crime %>%
-          filter(Category %in% counts$Category[1:10])
 
 # Convert dates variable into POSIXct for more date/time functionality
 crime$Dates <- strptime(crime$Dates, format="%Y-%m-%d %H:%M:%S")
@@ -40,15 +37,38 @@ crime <-
   )
 
 str(crime)  # Check it worked
+crime$Dates <- as.POSIXct(crime$Dates)  # dplyr functions do not like POSIXlt
 
 # Look at the type of crimes in the dataset
 unique(crime$Category)
 
-###--- DATA VISUALIZATION ---###
+# Count the occurence of each crime
+counts<- crime %>% count(Category, sort=TRUE)
+# Make data frame with only top 10 crimes
+top10 <-
+  crime %>%
+  filter(Category %in% counts$Category[1:10]) %>%
+  droplevels()
+
+
+# Separate data into different types of crime
+# violent crimes
+violent <-
+  crime %>%
+  filter(Category %in% c("ASSAULT", "ROBBERY", "SEX OFFENSES FORCIBLE")) %>%
+  droplevels()
+
+theft <-
+  crime %>%
+  filter(Category %in%
+           c("LARCENY/THEFT", "ROBBERY", "BURGLARY", "STOLEN PROPERTY")) %>%
+  droplevels()
+
+###--- DATA WRANGLING/VISUALIZATION ---###
 
 # Which neighborhood has the most crime?
 plot1<- ggplot(data=crime,
-               aes(x=reorder(PdDistrict, -table(PdDistrict)[PdDistrict]))) +
+        aes(x=reorder(PdDistrict, -table(PdDistrict)[PdDistrict]))) +
         geom_bar(stat="count", width=0.5, fill="steelblue") +
         scale_size_area() +
         xlab("District") +
@@ -56,18 +76,24 @@ plot1<- ggplot(data=crime,
         theme(axis.text.x = element_text(angle = 45, vjust=1, hjust = 1))
 
 # HOURS where the most crime occurs
-plot2<-   ggplot(data=crime, aes(x=Hour)) +
-          geom_bar(colour="black", fill="royalblue") +
-          xlab("Hour of Day") +
-          ylab('Count')
+plot2<- ggplot(data=crime, aes(x=Hour)) +
+        geom_bar(colour="black", fill="royalblue") +
+        xlab("Hour of Day") +
+        ylab('Count')
 # Fewer crime occur around 1-6 AM
 
 # DAYS OF THE WEEK where the most crime occurs
-plot3<-   ggplot(data=crime, aes(x=DayOfWeek)) +
-  geom_bar(colour="black", fill="royalblue") +
-  xlab("Day of the Week") +
-  ylab('Count')
+plot3<- ggplot(data=crime, aes(x=DayOfWeek)) +
+        geom_bar(colour="black", fill="royalblue") +
+        xlab("Day of the Week") +
+        ylab('Count')
 # Crime seems to be happening every day
+
+# How often are crimes solved?
+unique(crime$Resolution)
+crime %>% count(Resolution, sort=TRUE)
+# Looks like most cases do not have a resolution
+# Note: What is a psychopathic case?
 
 ###--- MAPPING OF SF ---###
 
@@ -85,3 +111,20 @@ p<- ggmap(map) +
 
 # Save map
 ggsave("sf_top_crimes_map.png", p, width=14, height=10, units="in")
+
+# Trying out leaflet package
+
+crime.map <- function(df, n) {
+
+  pal <- colorFactor(brewer.pal(length(unique(df$Category)), "Set1"),
+                     domain = df$Category)
+
+  leaflet(df[1:n,]) %>%
+    addProviderTiles("CartoDB.Positron") %>%
+    addCircleMarkers (lng =  ~X, lat =  ~Y,
+                      color = ~pal(Category),
+                      opacity = .7, radius  = 1) %>%
+    addLegend(pal = pal, values = df$Category)
+}
+
+crime.map(violent, n = 1000)
