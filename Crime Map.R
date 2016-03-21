@@ -50,7 +50,6 @@ top10 <-
   filter(Category %in% counts$Category[1:10]) %>%
   droplevels()
 
-
 # Make two data frames to focus on certain crimes
 
 # Violent crimes
@@ -65,6 +64,16 @@ theft <-
   filter(Category %in%
            c("LARCENY/THEFT", "ROBBERY", "BURGLARY", "STOLEN PROPERTY")) %>%
   droplevels()
+
+# Function to make simple pie chart to quickly show
+# prevalence of different types of crime in group
+make.pie <- function(data) {
+  new.table <- table(data$Category)
+  pie(new.table, col=brewer.pal(length(new.table),"Set1"))
+}
+
+make.pie(violent)  # Violent crimes
+make.pie(theft)  # Theft
 
 ###--- DATA WRANGLING/VISUALIZATION ---###
 
@@ -82,7 +91,17 @@ plot2<- ggplot(data=crime, aes(x=Hour)) +
         geom_bar(colour="black", fill="royalblue") +
         xlab("Hour of Day") +
         ylab('Count')
-# Fewer crime occur around 1-6 AM
+# Less crime occur around 1-6 AM for all crimes
+
+# Look at specific type of crimes
+# Then we can see if there are any differences in the time of occurence
+# for different crimes
+
+# Chart of violent crime occurences
+ggplot(data=violent, aes(x=Hour)) +
+  geom_bar(colour="black", fill="skyblue") +
+  ylab('Count') +
+  facet_wrap(~Category, scales='free')
 
 # DAYS OF THE WEEK where the most crime occurs
 plot3<- ggplot(data=crime, aes(x=DayOfWeek)) +
@@ -131,5 +150,5 @@ crime.map <- function(categories, n) {
     addLegend(pal = pal, values = new.crimes$Category)
 }
 
-# Violent crime map
+# Violent crimes map
 crime.map(c("ASSAULT", "ROBBERY", "SEX OFFENSES FORCIBLE"), n = 2000)
