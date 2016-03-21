@@ -51,13 +51,15 @@ top10 <-
   droplevels()
 
 
-# Separate data into different types of crime
-# violent crimes
+# Make two data frames to focus on certain crimes
+
+# Violent crimes
 violent <-
   crime %>%
   filter(Category %in% c("ASSAULT", "ROBBERY", "SEX OFFENSES FORCIBLE")) %>%
   droplevels()
 
+# Theft
 theft <-
   crime %>%
   filter(Category %in%
@@ -114,17 +116,20 @@ ggsave("sf_top_crimes_map.png", p, width=14, height=10, units="in")
 
 # Trying out leaflet package
 
-crime.map <- function(df, n) {
+crime.map <- function(categories, n) {
 
-  pal <- colorFactor(brewer.pal(length(unique(df$Category)), "Set1"),
-                     domain = df$Category)
+  new.crimes <- filter(crime, Category %in% categories) %>% droplevels()
 
-  leaflet(df[1:n,]) %>%
+  pal <- colorFactor(brewer.pal(length(unique(new.crimes$Category)), "Set1"),
+                     domain = new.crimes$Category)
+
+  leaflet(new.crimes[1:n,]) %>%
     addProviderTiles("CartoDB.Positron") %>%
     addCircleMarkers (lng =  ~X, lat =  ~Y,
                       color = ~pal(Category),
                       opacity = .7, radius  = 1) %>%
-    addLegend(pal = pal, values = df$Category)
+    addLegend(pal = pal, values = new.crimes$Category)
 }
 
-crime.map(violent, n = 1000)
+# Violent crime map
+crime.map(c("ASSAULT", "ROBBERY", "SEX OFFENSES FORCIBLE"), n = 2000)
